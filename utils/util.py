@@ -10,8 +10,9 @@ import h5py
 from concurrent.futures import ThreadPoolExecutor
 
 # Utilities for file handling and plotting
-from pygmt_helper.pygmt_helper import plots
-from pygmt_helper.pygmt_helper import plotting
+# Need to update GMT on hypocenter by Jake! Once it is updated, uncomment these lines.
+# from pygmt_helper import plots
+from pygmt_helper import plotting
 
 
 # Load Stations Data

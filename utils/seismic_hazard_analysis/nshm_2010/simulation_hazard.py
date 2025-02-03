@@ -3,6 +3,7 @@ Module for computing the seismic hazard for the
 New Zealand 2010 Seismic Hazard Model using
 the results from physics-based GM simulations
 """
+import sys
 from typing import Sequence
 from pathlib import Path
 
@@ -41,13 +42,13 @@ def load_sim_im_data(im_data_dir: Path):
 
     fault_im_dict = {}
     for cur_fault in tqdm(faults):
-        cur_im_files = (im_data_dir / cur_fault).rglob("*REL*.csv")
+        cur_im_files = (im_data_dir / cur_fault / "IM").rglob("*REL*.csv")
 
         # Create DataArray for each fault
         cur_im_data, cur_rel_names = [], []
         cur_stations, cur_IMs = None, None
         for ix, cur_im_file in enumerate(cur_im_files):
-            cur_im_df = pd.read_csv(cur_im_file, index_col=0)
+            cur_im_df = pd.read_csv(cur_im_file, index_col=0).sort_index()
 
             if ix == 0:
                 cur_stations = cur_im_df.index
@@ -68,6 +69,27 @@ def load_sim_im_data(im_data_dir: Path):
                 "realisation": cur_rel_names,
             },
         )
+
+        # try:
+        #     # Remove stations and IMs with missing values
+        #     valid_stations = ~np.any(np.isnan(cur_im_array.values), axis=(1, 2))  # Stations without NaN
+        # except Exception as e:
+        #     print(f"Fault Name: {cur_fault}")
+        #     print(f"IM File: {cur_im_file}")
+        #     sys.exit("Stopping Execution Due to an Error!")
+
+        # Remove stations and IMs with missing values
+        valid_stations = cur_im_array.notnull().all(dim=("IM", "realisation"))  # Stations with no NaN
+        valid_IMs = cur_im_array.notnull().all(dim=("station", "realisation"))  # IMs with no NaN
+
+        # valid_stations = ~np.any(np.isnan(cur_im_array.values), axis=(1, 2))  # Stations without NaN
+        # valid_IMs = ~np.any(np.isnan(cur_im_array.values), axis=(0, 2))       # IMs without NaN
+
+        cur_im_array = cur_im_array.sel(
+            station=cur_im_array.station[valid_stations],
+            IM=cur_im_array.IM[valid_IMs],
+            )
+
         fault_im_dict[cur_fault] = cur_im_array
 
     return fault_im_dict
