@@ -13,8 +13,6 @@ import matplotlib.pyplot as plt
 file_dir = Path(__file__).resolve().parent
 root_dir = file_dir.parent
 # # .ipynb
-# file_dir = os.getcwd()
-# root_dir = os.path.dirname(file_dir)
 os.chdir(root_dir)
 
 if str(root_dir) not in sys.path:
