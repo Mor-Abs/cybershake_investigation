@@ -3,17 +3,15 @@ Module for computing the seismic hazard for the
 New Zealand 2010 Seismic Hazard Model using
 the results from physics-based GM simulations
 """
-import sys
-from typing import Sequence
+from collections.abc import Sequence
 from pathlib import Path
 
-import pandas as pd
 import numpy as np
+import pandas as pd
 import xarray as xr
 from tqdm import tqdm
 
-from .. import utils
-from .. import hazard
+from .. import hazard, utils
 
 
 def load_sim_im_data(im_data_dir: Path):
@@ -48,18 +46,16 @@ def load_sim_im_data(im_data_dir: Path):
         cur_im_data, cur_rel_names = [], []
         cur_stations, cur_IMs = None, None
         for ix, cur_im_file in enumerate(cur_im_files):
-            cur_im_df = pd.read_csv(cur_im_file, index_col=0).sort_index()
+            cur_im_df = pd.read_csv(cur_im_file, index_col=0)
 
             if ix == 0:
                 cur_stations = cur_im_df.index
                 cur_IMs = cur_im_df.columns[1:]
-            else:
-                assert np.all(cur_stations == cur_im_df.index)
-                assert np.all(cur_IMs == cur_im_df.columns[1:])
 
             cur_rel_names.append(cur_im_file.stem.rsplit("_", 1)[1])
             cur_im_data.append(cur_im_df[cur_IMs].values)
 
+        # Create the DataArray
         cur_im_array = xr.DataArray(
             data=np.stack(cur_im_data, axis=-1),
             dims=("station", "IM", "realisation"),
@@ -70,26 +66,19 @@ def load_sim_im_data(im_data_dir: Path):
             },
         )
 
-        # try:
-        #     # Remove stations and IMs with missing values
-        #     valid_stations = ~np.any(np.isnan(cur_im_array.values), axis=(1, 2))  # Stations without NaN
-        # except Exception as e:
-        #     print(f"Fault Name: {cur_fault}")
-        #     print(f"IM File: {cur_im_file}")
-        #     sys.exit("Stopping Execution Due to an Error!")
-
         # Remove stations and IMs with missing values
-        valid_stations = cur_im_array.notnull().all(dim=("IM", "realisation"))  # Stations with no NaN
-        valid_IMs = cur_im_array.notnull().all(dim=("station", "realisation"))  # IMs with no NaN
-
-        # valid_stations = ~np.any(np.isnan(cur_im_array.values), axis=(1, 2))  # Stations without NaN
-        # valid_IMs = ~np.any(np.isnan(cur_im_array.values), axis=(0, 2))       # IMs without NaN
+        valid_stations = ~np.any(np.isnan(cur_im_array.values), axis=(1, 2))  # Stations without NaN
+        valid_IMs = ~np.any(np.isnan(cur_im_array.values), axis=(0, 2))       # IMs without NaN
 
         cur_im_array = cur_im_array.sel(
             station=cur_im_array.station[valid_stations],
             IM=cur_im_array.IM[valid_IMs],
-            )
+        )
 
+
+        # Assign the cleaned DataArray to the dictionary
+        
+        # Assign the cleaned DataArray to the dictionary
         fault_im_dict[cur_fault] = cur_im_array
 
     return fault_im_dict
@@ -160,7 +149,7 @@ def compute_sim_hazard(
     ims = site_im_df.columns if ims is None else ims
     if im_levels is not None:
         if any([True for cur_im in ims if cur_im not in im_levels]):
-            raise ValueError(f"Not all IMs found in im_levels!")
+            raise ValueError("Not all IMs found in im_levels!")
 
     hazard_results = {}
     for cur_im in ims:

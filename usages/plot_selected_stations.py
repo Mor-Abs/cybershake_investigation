@@ -1,6 +1,8 @@
 # list of stations to plot
-st_list = ["HNPS", "TRMS"]
-
+# st_list = ["HNPS", "TRMS"]
+st_list = ["32002e1", "CHHC"]
+# st_list = ["PIPS"]
+# st_list = ["CHHC"]
 
 # import  dependencies
 import os

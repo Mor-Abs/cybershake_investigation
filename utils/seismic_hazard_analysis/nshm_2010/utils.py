@@ -1,11 +1,11 @@
 from pathlib import Path
 
-import pandas as pd
 import numpy as np
+import pandas as pd
 
-from source_modelling import sources
-from qcore import nhm
 from qcore import coordinates as coords
+from qcore import nhm
+from source_modelling import sources
 
 
 def read_ds_nhm(background_ffp: Path) -> pd.DataFrame:
@@ -26,7 +26,7 @@ def read_ds_nhm(background_ffp: Path) -> pd.DataFrame:
     return pd.read_csv(
         background_ffp,
         skiprows=5,
-        sep="\s+",
+        sep=r"\s+",
         header=None,
         names=[
             "a",
@@ -66,7 +66,7 @@ def create_ds_rupture_name(
     str
         The unique name of the rupture source
     """
-    return "{}--{}_{}".format(create_ds_fault_name(lat, lon, depth), mag, tect_type)
+    return f"{create_ds_fault_name(lat, lon, depth)}--{mag}_{tect_type}"
 
 
 def create_ds_fault_name(lat: float, lon: float, depth: float):
@@ -87,7 +87,7 @@ def create_ds_fault_name(lat: float, lon: float, depth: float):
     str
         The unique name of the fault
     """
-    return "{}_{}_{}".format(lat, lon, depth)
+    return f"{lat}_{lon}_{depth}"
 
 
 def get_ds_rupture_df(background_ffp: Path):
@@ -185,17 +185,17 @@ def get_fault_objects(fault_nhm: nhm.NHMFault) -> sources.Fault:
     sources.Fault
         Source object representing the fault
     """
-    n_planes = fault_nhm.trace.shape[0] - 1
+    trace_points_nztm = coords.wgs_depth_to_nztm(fault_nhm.trace[:, ::-1])
 
+    n_planes = fault_nhm.trace.shape[0] - 1
     planes = []
     for i in range(n_planes):
-        trace_corners = np.asarray([fault_nhm.trace[i], fault_nhm.trace[i + 1]])
-        plane = sources.Plane.from_trace(
-            trace_corners[:, [1, 0]],
+        plane = sources.Plane.from_nztm_trace(
+            np.array([trace_points_nztm[i], trace_points_nztm[i + 1]]),
             fault_nhm.dtop,
             fault_nhm.dbottom,
             fault_nhm.dip,
-            fault_nhm.dip_dir,
+            dip_dir=fault_nhm.dip_dir
         )
         planes.append(plane)
 
