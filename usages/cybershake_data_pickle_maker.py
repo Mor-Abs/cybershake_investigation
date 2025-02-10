@@ -1,3 +1,22 @@
+"""
+This script reads all CSV files in a CyberShake IM repository and 
+generates a pickle file to enable fast and easy data loading.
+
+--------
+Output:
+fault_im_dict dictionary.
+The function returns a dictionary fault_im_dict where each key is a
+fault name, and the value is an xarray.DataArray containing the IM 
+data for that fault (stations, IMs, realisations). The DataArray has
+dimensions for stations, IMs, and realisations, with appropriate coordinates.
+
+--------
+Author: Morteza
+Version History:
+- Version 1.0: Feb 10, 2025
+
+"""
+
 # import  dependencies
 import os
 import sys
@@ -5,7 +24,7 @@ from pathlib import Path
 import shutil
 import pickle
 
-file_dir=Path(__file__).resolve().parent
+file_dir = Path(__file__).resolve().parent
 root_dir = file_dir.parent
 
 if str(root_dir) not in sys.path:
@@ -15,7 +34,9 @@ import utils.seismic_hazard_analysis as sha
 
 # directory work
 data_version = "combined_v20p6_v24p8"
-sim_dir = f"/mnt/hypo_data/mab419/Cybershake_Data/{data_version}"  # dpath to simulation data
+sim_dir = (
+    f"/mnt/hypo_data/mab419/Cybershake_Data/{data_version}"  # dpath to simulation data
+)
 sim_pickle_dir = f"/mnt/hypo_data/mab419/Cybershake_Data_Pickle/{data_version}"  # dpath to hazard calculation data
 
 # Check if the destination directory exists
@@ -23,12 +44,12 @@ if Path(sim_pickle_dir).exists():
     prompt = input(
         f"The following path already exists! Do you want to delete and renew (1) or terminate (2)? \n{sim_pickle_dir}\n"
     )
-    if prompt == '1':
+    if prompt == "1":
         # Remove the folder
         shutil.rmtree(sim_pickle_dir)
         print(f"Deleted and renewed the path: \n{sim_pickle_dir}")
         os.makedirs(sim_pickle_dir, exist_ok=False)
-    elif prompt == '2':
+    elif prompt == "2":
         print("Terminating the process.")
         exit()
     else:
@@ -40,7 +61,7 @@ else:
     print(f"Created the path: \n{sim_pickle_dir}")
 
 # Load Data from CSV Files
-fault_im_data = sha.nshm_2010.load_sim_im_data(Path(sim_dir)) 
+fault_im_data = sha.nshm_2010.load_sim_im_data(Path(sim_dir))
 
 # Write Pickle File
 file_name = "Cybershake_fault_im_data.pkl"

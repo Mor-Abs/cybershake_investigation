@@ -1,2 +1,3 @@
-plots/
-pygmt_helper/
+plots/*
+pygmt_helper/*
+base_data/*
